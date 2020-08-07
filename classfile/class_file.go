@@ -1,5 +1,10 @@
 package classfile
 
+import (
+	"bufio"
+	"encoding/binary"
+)
+
 /*
 ClassFile {
     u4             magic;
@@ -37,4 +42,26 @@ type ClassFile struct {
 	MethodInfo        []Method
 	AttributesCount   uint16
 	AttributeInfo     []Attribute
+}
+
+func (cf *ClassFile) Read(reader *bufio.Reader) {
+	cf.Magic = readUint32(reader)
+	if cf.Magic != 0xCAFEBABE {
+		panic("class文件格式不对，魔数不能对应")
+	}
+	cf.MinorVersion = readUint16(reader)
+	cf.MajorVersion = readUint16(reader)
+	cf.ConstantPoolCount = readUint16(reader)
+}
+
+func readUint32(reader *bufio.Reader) uint32 {
+	arr := make([]byte, 4)
+	reader.Read(arr)
+	return binary.BigEndian.Uint32(arr)
+}
+
+func readUint16(reader *bufio.Reader) uint16 {
+	arr := make([]byte, 2)
+	reader.Read(arr)
+	return binary.BigEndian.Uint16(arr)
 }
