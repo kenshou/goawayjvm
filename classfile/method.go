@@ -10,7 +10,7 @@ type Method struct {
 	Name_index       u2
 	Descriptor_index u2
 	Attributes_count u2
-	Attribute_info   []Attribute
+	Attribute_info   []IAttribute
 }
 
 type Method_access_flag_type u2

@@ -2,6 +2,9 @@ package classfile
 
 import "bufio"
 
+type IAttribute interface {
+}
+
 type Attribute struct {
 	Attribute_name_index u2
 	Attribute_length     u4
@@ -11,11 +14,11 @@ type Attribute struct {
 /**
 解析属性（用于字段和方法上的解析），不会更新ClassFile中的值
 */
-func ParseAttributeStatic(cf *ClassFile, reader *bufio.Reader) (u2, []Attribute) {
+func ParseAttributeStatic(cf *ClassFile, reader *bufio.Reader) (u2, []IAttribute) {
 	attributeLength := cf.readU2(reader)
-	var attrArray []Attribute = nil
+	var attrArray []IAttribute = nil
 	if attributeLength > 0 {
-		attrArray = make([]Attribute, attributeLength)
+		attrArray = make([]IAttribute, attributeLength)
 		for i := 0; i < len(attrArray); i++ {
 			nameIndex := cf.readU2(reader)
 			infoLength := cf.readU4(reader)

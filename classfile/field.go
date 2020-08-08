@@ -11,7 +11,7 @@ type Field struct {
 	//字段类型描述符
 	Descriptor_index u2
 	Attributes_count u2
-	Attribute_info   []Attribute
+	Attribute_info   []IAttribute
 }
 
 //字段修饰符类型

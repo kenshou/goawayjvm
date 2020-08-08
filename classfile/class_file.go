@@ -48,7 +48,7 @@ type ClassFile struct {
 	MethodsCount      u2
 	MethodInfo        []Method
 	AttributesCount   u2
-	AttributeInfo     []Attribute
+	AttributeInfo     []IAttribute
 }
 
 func (cf *ClassFile) Read(reader *bufio.Reader) {
