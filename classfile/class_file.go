@@ -51,7 +51,7 @@ type ClassFile struct {
 	AttributeInfo     []IAttribute
 }
 
-func (cf *ClassFile) Read(reader *bufio.Reader) {
+func (cf *ClassFile) ParseClassFile(reader *bufio.Reader) {
 	cf.Magic = cf.readU4(reader)
 	if cf.Magic != 0xCAFEBABE {
 		panic("class文件格式不对，魔数不能对应")

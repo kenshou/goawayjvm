@@ -15,5 +15,5 @@ func TestClassFile_Read(t *testing.T) {
 	r := bufio.NewReader(fi)
 
 	cf := ClassFile{}
-	cf.Read(r)
+	cf.ParseClassFile(r)
 }
