@@ -122,11 +122,12 @@ const (
 常量池解析 包含常量池长度和常量池数组
 */
 func ParseConstantPool(cf *ClassFile, reader *bufio.Reader) {
-	//读出常量池的计数值，注意是从1开始。
+
 	poolCount := cf.readU2(reader)
 	cf.ConstantPoolCount = poolCount
 	cf.ConstantInfo = make([]IConstanPool, poolCount-1)
-	if poolCount >= 1 {
+	//读出常量池的计数值，注意是从1开始。所以必须大于1
+	if poolCount > 1 {
 		var i u2 = 1
 		for ; i < poolCount; i++ {
 			tag := ConstantType(cf.readU1(reader))
