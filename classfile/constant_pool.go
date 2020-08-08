@@ -125,14 +125,19 @@ func ParseConstantPool(cf *ClassFile, reader *bufio.Reader) {
 
 	poolCount := cf.readU2(reader)
 	cf.ConstantPoolCount = poolCount
-	cf.ConstantInfo = make([]IConstanPool, poolCount-1)
-	//读出常量池的计数值，注意是从1开始。所以必须大于1
-	if poolCount > 1 {
+	cf.ConstantInfo = make([]IConstanPool, poolCount)
+	/*
+		与Java中语言习惯不同，这个容量计数是从1而不是0开始 的，如图6-3所示，常量池容量（偏移地址：0x00000008）为十六进制数0x0016，即十进制的22，
+		这就代表常量池中有21项常量，索引值范围为1～21。
+		在Class文件格式规范制定之时，设计者将第0项常量 空出来是有特殊考虑的，这样做的目的在于，
+		如果后面某些指向常量池的索引值的数据在特定情况下 需要表达“不引用任何一个常量池项目”的含义，可以把索引值设置为0来表示。
+	*/
+	if poolCount > 0 {
 		var i u2 = 1
 		for ; i < poolCount; i++ {
 			tag := ConstantType(cf.readU1(reader))
 			var err error
-			cf.ConstantInfo[i-1], err = parseByConstantType(cf, reader, tag)
+			cf.ConstantInfo[i], err = parseByConstantType(cf, reader, tag)
 			if err != nil {
 				panic(err)
 			}
