@@ -1,33 +1,41 @@
 package classfile
 
-import "bufio"
+import (
+	"bufio"
+	"encoding/binary"
+	"errors"
+	"math"
+)
 
 /**
 常量池
 */
+type IConstanPool interface{}
 type ConstantPool struct {
 	Tag ConstantType `常量次的项目类型标识`
 }
 type CONSTANT_Utf8_info struct {
 	ConstantPool
-	Length u2
-	Bytes  []u1
+	Length   u2
+	Utf8Info string
 }
 type CONSTANT_Integer_info struct {
 	ConstantPool
-	Bytes u4
+	Value int32
 }
 type CONSTANT_Float_info struct {
 	ConstantPool
-	Bytes u4
+	Value float32
 }
 type CONSTANT_Long_info struct {
 	ConstantPool
-	Bytes u8
+	//Bytes u8
+	Value int64
 }
 type CONSTANT_Double_info struct {
 	ConstantPool
-	Bytes u8
+	//Bytes u8
+	Value float64
 }
 type CONSTANT_Class_info struct {
 	ConstantPool
@@ -111,6 +119,139 @@ const (
 )
 
 func ParseConstantPool(cf *ClassFile, reader *bufio.Reader) {
-	cf.ConstantPoolCount = cf.readU2(reader)
+	//读出常量池的计数值，注意是从1开始。
+	poolCount := cf.readU2(reader)
+	cf.ConstantPoolCount = poolCount
+	cf.ConstantInfo = make([]IConstanPool, poolCount-1)
+	if poolCount >= 1 {
+		var i u2 = 1
+		for ; i < poolCount; i++ {
+			tag := ConstantType(cf.readU1(reader))
+			var err error
+			cf.ConstantInfo[i-1], err = parseByConstantType(cf, reader, tag)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+}
 
+func parseByConstantType(cf *ClassFile, reader *bufio.Reader, tag ConstantType) (IConstanPool, error) {
+	switch tag {
+	case CONSTANT_Utf8_info_type:
+		strLength := cf.readU2(reader)
+		utf8Bytes := make([]byte, uint16(strLength))
+		reader.Read(utf8Bytes)
+		return CONSTANT_Utf8_info{
+			ConstantPool: ConstantPool{Tag: tag},
+			Length:       strLength,
+			Utf8Info:     string(utf8Bytes),
+		}, nil
+
+	case CONSTANT_Integer_info_type:
+		intBytes := make([]byte, 4)
+		reader.Read(intBytes)
+		value := int32(binary.BigEndian.Uint32(intBytes))
+		return CONSTANT_Integer_info{
+			ConstantPool: ConstantPool{
+				Tag: tag,
+			},
+			Value: value,
+		}, nil
+
+	case CONSTANT_Float_info_type:
+		intBytes := make([]byte, 4)
+		reader.Read(intBytes)
+		value := math.Float32frombits(binary.BigEndian.Uint32(intBytes))
+		return CONSTANT_Float_info{
+			ConstantPool: ConstantPool{Tag: tag},
+			Value:        value,
+		}, nil
+
+	case CONSTANT_Long_info_type:
+		intBytes := make([]byte, 8)
+		reader.Read(intBytes)
+		value := int64(binary.BigEndian.Uint64(intBytes))
+		return CONSTANT_Long_info{
+			ConstantPool: ConstantPool{Tag: tag},
+			Value:        value,
+			//Bytes:        cf.readU8(reader),
+		}, nil
+	case CONSTANT_Double_info_type:
+		intBytes := make([]byte, 8)
+		reader.Read(intBytes)
+		value := math.Float64frombits(binary.BigEndian.Uint64(intBytes))
+		return CONSTANT_Double_info{
+			ConstantPool: ConstantPool{Tag: tag},
+			Value:        value,
+		}, nil
+	case CONSTANT_Class_info_type:
+		return CONSTANT_Class_info{
+			ConstantPool: ConstantPool{Tag: tag},
+			Index:        cf.readU2(reader),
+		}, nil
+	case CONSTANT_String_info_type:
+		return CONSTANT_String_info{
+			ConstantPool: ConstantPool{Tag: tag},
+			Index:        cf.readU2(reader),
+		}, nil
+	case CONSTANT_Fieldref_info_type:
+		return CONSTANT_Fieldref_info{
+			ConstantPool:      ConstantPool{Tag: tag},
+			Index4ClassInfo:   cf.readU2(reader),
+			Index4NameAndType: cf.readU2(reader),
+		}, nil
+	case CONSTANT_Methodref_info_type:
+		return CONSTANT_Methodref_info{
+			ConstantPool:      ConstantPool{Tag: tag},
+			Index4ClassInfo:   cf.readU2(reader),
+			Index4NameAndType: cf.readU2(reader),
+		}, nil
+	case CONSTANT_InterfaceMethodref_info_type:
+		return CONSTANT_InterfaceMethodref_info{
+			ConstantPool:      ConstantPool{Tag: tag},
+			Index4ClassInfo:   cf.readU2(reader),
+			Index4NameAndType: cf.readU2(reader),
+		}, nil
+	case CONSTANT_NameAndType_info_type:
+		return CONSTANT_NameAndType_info{
+			ConstantPool: ConstantPool{Tag: tag},
+			Index4Name:   cf.readU2(reader),
+			Index4Des:    cf.readU2(reader),
+		}, nil
+	case CONSTANT_MethodHandle_info_type:
+		return CONSTANT_MethodHandle_info{
+			ConstantPool:   ConstantPool{Tag: tag},
+			ReferenceKind:  cf.readU1(reader),
+			ReferenceIndex: cf.readU2(reader),
+		}, nil
+	case CONSTANT_MethodType_info_type:
+		return CONSTANT_MethodType_info{
+			ConstantPool:    ConstantPool{Tag: tag},
+			DescriptorIndex: cf.readU2(reader),
+		}, nil
+	case CONSTANT_Dynamic_info_type:
+		return CONSTANT_Dynamic_info{
+			ConstantPool:             ConstantPool{Tag: tag},
+			BootstrapMethodAttrIndex: cf.readU2(reader),
+			NameAndTypeIndex:         cf.readU2(reader),
+		}, nil
+	case CONSTANT_InvokeDynamic_info_type:
+		return CONSTANT_InvokeDynamic_info{
+			ConstantPool:             ConstantPool{Tag: tag},
+			BootstrapMethodAttrIndex: cf.readU2(reader),
+			NameAndTypeIndex:         cf.readU2(reader),
+		}, nil
+	case CONSTANT_Module_info_type:
+		return CONSTANT_Module_info{
+			ConstantPool: ConstantPool{Tag: tag},
+			NameIndex:    cf.readU2(reader),
+		}, nil
+	case CONSTAN_Package_info_type:
+		return CONSTAN_Package_info{
+			ConstantPool: ConstantPool{Tag: tag},
+			NameIndex:    cf.readU2(reader),
+		}, nil
+	}
+	return nil, errors.New("不存在的常量类型")
 }

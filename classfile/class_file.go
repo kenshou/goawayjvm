@@ -37,7 +37,7 @@ type ClassFile struct {
 	MinorVersion      u2
 	MajorVersion      u2
 	ConstantPoolCount u2
-	ConstantInfo      []ConstantPool
+	ConstantInfo      []IConstanPool
 	AccessFlags       u2
 	ThisClass         u2
 	SuperClass        u2
@@ -77,4 +77,20 @@ func (cf *ClassFile) readU2(reader *bufio.Reader) u2 {
 func (cf *ClassFile) readU1(reader *bufio.Reader) u1 {
 	readByte, _ := reader.ReadByte()
 	return u1(readByte)
+}
+
+func (cf *ClassFile) readU1Array(reader *bufio.Reader, length uint16) []u1 {
+	arr := make([]byte, length)
+	reader.Read(arr)
+	res := make([]u1, length)
+	for i, v := range arr {
+		res[i] = u1(v)
+	}
+	return res
+}
+
+func (cf *ClassFile) readU8(reader *bufio.Reader) u8 {
+	arr := make([]byte, 8)
+	reader.Read(arr)
+	return u8(binary.BigEndian.Uint64(arr))
 }
