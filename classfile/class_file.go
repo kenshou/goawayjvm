@@ -51,6 +51,9 @@ type ClassFile struct {
 	AttributeInfo     []IAttribute
 }
 
+/**
+class的主体解析方法
+*/
 func (cf *ClassFile) ParseClassFile(reader *bufio.Reader) {
 	cf.Magic = cf.readU4(reader)
 	if cf.Magic != 0xCAFEBABE {
@@ -70,6 +73,7 @@ func (cf *ClassFile) ParseClassFile(reader *bufio.Reader) {
 	ParseFieldInfo(cf, reader)
 	//解析方法
 	ParseMethodInfo(cf, reader)
+	//解析附加属性
 	cf.AttributesCount, cf.AttributeInfo = ParseAttributeStatic(cf, reader)
 
 }
