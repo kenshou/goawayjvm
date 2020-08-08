@@ -25,43 +25,56 @@ ClassFile {
     attribute_info attributes[attributes_count];
 }
 */
+type (
+	u1 uint8
+	u2 uint16
+	u4 uint32
+	u8 uint64
+)
+
 type ClassFile struct {
-	Magic             uint32
-	MinorVersion      uint16
-	MajorVersion      uint16
-	ConstantPoolCount uint16
+	Magic             u4
+	MinorVersion      u2
+	MajorVersion      u2
+	ConstantPoolCount u2
 	ConstantInfo      []ConstantPool
-	AccessFlags       uint16
-	ThisClass         uint16
-	SuperClass        uint16
-	InterfacesCount   uint16
+	AccessFlags       u2
+	ThisClass         u2
+	SuperClass        u2
+	InterfacesCount   u2
 	Interfaces        []InterfaceInfo
-	FieldCount        uint16
+	FieldCount        u2
 	FieldInfo         []Field
-	MethodsCount      uint16
+	MethodsCount      u2
 	MethodInfo        []Method
-	AttributesCount   uint16
+	AttributesCount   u2
 	AttributeInfo     []Attribute
 }
 
 func (cf *ClassFile) Read(reader *bufio.Reader) {
-	cf.Magic = readUint32(reader)
+	cf.Magic = cf.readU4(reader)
 	if cf.Magic != 0xCAFEBABE {
 		panic("class文件格式不对，魔数不能对应")
 	}
-	cf.MinorVersion = readUint16(reader)
-	cf.MajorVersion = readUint16(reader)
-	cf.ConstantPoolCount = readUint16(reader)
+	cf.MinorVersion = cf.readU2(reader)
+	cf.MajorVersion = cf.readU2(reader)
+	//cf.ConstantPoolCount = readU2(reader)
+	ParseConstantPool(cf, reader)
 }
 
-func readUint32(reader *bufio.Reader) uint32 {
+func (cf *ClassFile) readU4(reader *bufio.Reader) u4 {
 	arr := make([]byte, 4)
 	reader.Read(arr)
-	return binary.BigEndian.Uint32(arr)
+	return u4(binary.BigEndian.Uint32(arr))
 }
 
-func readUint16(reader *bufio.Reader) uint16 {
+func (cf *ClassFile) readU2(reader *bufio.Reader) u2 {
 	arr := make([]byte, 2)
 	reader.Read(arr)
-	return binary.BigEndian.Uint16(arr)
+	return u2(binary.BigEndian.Uint16(arr))
+}
+
+func (cf *ClassFile) readU1(reader *bufio.Reader) u1 {
+	readByte, _ := reader.ReadByte()
+	return u1(readByte)
 }
