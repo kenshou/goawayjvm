@@ -38,7 +38,7 @@ type ClassFile struct {
 	MajorVersion      u2
 	ConstantPoolCount u2
 	ConstantInfo      []IConstanPool
-	AccessFlags       u2
+	AccessFlags       Class_Access_flag_type
 	ThisClass         u2
 	SuperClass        u2
 	InterfacesCount   u2
@@ -59,7 +59,19 @@ func (cf *ClassFile) Read(reader *bufio.Reader) {
 	cf.MinorVersion = cf.readU2(reader)
 	cf.MajorVersion = cf.readU2(reader)
 	//cf.ConstantPoolCount = readU2(reader)
+	//常量池解析
 	ParseConstantPool(cf, reader)
+	cf.AccessFlags = Class_Access_flag_type(cf.readU2(reader))
+	cf.ThisClass = cf.readU2(reader)
+	cf.SuperClass = cf.readU2(reader)
+	//接口索引集合
+	ParseInterfaceInfo(cf, reader)
+	//解析类or实列字段
+	ParseFieldInfo(cf, reader)
+	//解析方法
+	ParseMethodInfo(cf, reader)
+	cf.AttributesCount, cf.AttributeInfo = ParseAttributeStatic(cf, reader)
+
 }
 
 func (cf *ClassFile) readU4(reader *bufio.Reader) u4 {
@@ -79,12 +91,19 @@ func (cf *ClassFile) readU1(reader *bufio.Reader) u1 {
 	return u1(readByte)
 }
 
-func (cf *ClassFile) readU1Array(reader *bufio.Reader, length uint16) []u1 {
+func (cf *ClassFile) readU1Array(reader *bufio.Reader, length uint32) []u1 {
 	arr := make([]byte, length)
 	reader.Read(arr)
 	res := make([]u1, length)
 	for i, v := range arr {
 		res[i] = u1(v)
+	}
+	return res
+}
+func (cf *ClassFile) readU2Array(reader *bufio.Reader, length uint16) []u2 {
+	res := make([]u2, length)
+	for i := 0; i < len(res); i++ {
+		res[i] = cf.readU2(reader)
 	}
 	return res
 }

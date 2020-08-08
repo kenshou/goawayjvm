@@ -118,6 +118,9 @@ const (
 	CONSTAN_Package_info_type             ConstantType = 20 //表示一个模块中开放或者导出的包
 )
 
+/**
+常量池解析 包含常量池长度和常量池数组
+*/
 func ParseConstantPool(cf *ClassFile, reader *bufio.Reader) {
 	//读出常量池的计数值，注意是从1开始。
 	poolCount := cf.readU2(reader)
